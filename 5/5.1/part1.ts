@@ -1,4 +1,4 @@
-import * as fs  from 'fs'
+import * as fs from 'fs';
 import { Computer } from './Computer';
 
 const text = fs.readFileSync('5/input.txt').toString('utf-8');
@@ -10,3 +10,4 @@ const computer = new Computer(originalStrip);
 const outputs = computer.run([1]);
 
 console.log(outputs);
+console.log(outputs[outputs.length-1]);

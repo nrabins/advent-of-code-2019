@@ -105,7 +105,7 @@ export class Computer implements IComputer {
 
   private executeOutput(instruction: Instruction) {
     if (instruction.parameters.length != 1) {
-      throw `Unexpected number of parameters for input, expected 1, got ${instruction.parameters.length}`
+      throw `Unexpected number of parameters for output, expected 1, got ${instruction.parameters.length}`
     }
     const value = this.getParameterValue(instruction.parameters[0]);
     this.outputs.push(value);

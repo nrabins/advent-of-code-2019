@@ -5,19 +5,6 @@ export enum Operation {
   Output = 4
 }
 
-function getNumberOfParameters(operation: Operation): number {
-  switch (operation) {
-    case Operation.Add:
-    case Operation.Multiply:
-      return 2;
-    case Operation.Input:
-    case Operation.Output:
-      return 1;
-    default:
-      throw `Unrecognized operation ${operation}`
-  }
-}
-
 export interface IParameter {
   parameterMode: ParameterMode;
   value: number;
