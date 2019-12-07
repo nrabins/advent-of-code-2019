@@ -4,7 +4,7 @@ import Node from './Node';
 const DEBUG = false;
 let text;
 if (!DEBUG) {
-  text = fs.readFileSync('6/input.txt').toString('utf-8');
+  text = fs.readFileSync('src/6/input.txt').toString('utf-8');
 } else {
   text = `COM)B
 B)C
