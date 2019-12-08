@@ -1,12 +1,13 @@
 export enum Operation {
-  Add = 1,
-  Multiply = 2,
-  Input = 3,
-  Output = 4,
-  JumpIfTrue = 5,
-  JumpIfFalse = 6,
-  LessThan = 7,
-  Equals = 8,
+  Add = "Add",
+  Multiply = "Multiply",
+  Input = "Input",
+  Output = "Output",
+  JumpIfTrue = "JumpIfTrue",
+  JumpIfFalse = "JumpIfFalse",
+  LessThan = "LessThan",
+  Equals = "Equals",
+  Halt = "Halt",
 }
 
 export interface IParameter {
@@ -20,8 +21,8 @@ export class Parameter implements IParameter {
 }
 
 export enum ParameterMode {
-  Position,
-  Immediate
+  Position = "Position",
+  Immediate = "Immediate",
 }
 
 export interface IInstruction {
@@ -69,6 +70,10 @@ export class Instruction implements IInstruction {
       case "08":
         this.operation = Operation.Equals;
         numberOfParameters = 3;
+        break;
+      case "99":
+        this.operation = Operation.Halt
+        numberOfParameters = 0;
         break;
       default:
         throw `Unrecognized opcode: ${opCodeStr}`;

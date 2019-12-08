@@ -2,7 +2,11 @@ export enum Operation {
   Add = 1,
   Multiply = 2,
   Input = 3,
-  Output = 4
+  Output = 4,
+  JumpIfTrue = 5,
+  JumpIfFalse = 6,
+  LessThan = 7,
+  Equals = 8,
 }
 
 export interface IParameter {
@@ -50,6 +54,22 @@ export class Instruction implements IInstruction {
         this.operation = Operation.Output;
         numberOfParameters = 1;
         break;
+      case "05":
+        this.operation = Operation.JumpIfTrue;
+        numberOfParameters = 2;
+        break;
+      case "06":
+        this.operation = Operation.JumpIfFalse;
+        numberOfParameters = 2;
+        break;
+      case "07":
+        this.operation = Operation.LessThan;
+        numberOfParameters = 3;
+        break;
+      case "08":
+        this.operation = Operation.Equals;
+        numberOfParameters = 3;
+        break;
       default:
         throw `Unrecognized opcode: ${opCodeStr}`;
     }
@@ -58,9 +78,9 @@ export class Instruction implements IInstruction {
       throw "Ran out of strip"
     }
 
-    const parameterValues = strip.slice(i+1, i+numberOfParameters+1);
+    const parameterValues = strip.slice(i + 1, i + numberOfParameters + 1);
     this.parameters = parameterValues.map((value, index) => {
-      const parameterModeChar = getDigitFromRight(instruction, index+2);
+      const parameterModeChar = getDigitFromRight(instruction, index + 2);
       let parameterMode: ParameterMode;
       switch (parameterModeChar) {
         case "0": parameterMode = ParameterMode.Position; break;

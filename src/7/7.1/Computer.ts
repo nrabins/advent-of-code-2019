@@ -1,21 +1,22 @@
 import { Instruction, Operation, Parameter, ParameterMode } from "./Instruction";
 
 export interface IComputer {
-  strip: number[]
 }
 
 const EXIT_CODE = 99;
 
 export class Computer implements IComputer {
 
+  private strip: number[];
   private i: number; // ha
   private inputs: number[]
   private outputs: number[];
 
-  constructor(public strip: number[]) {
+  constructor(program: string) {
     this.i = 0;
     this.inputs = [];
     this.outputs = [];
+    this.strip = program.split(",").map(num => parseInt(num, 10));
   }
 
   public run(inputs: number[]): number[] {
@@ -25,7 +26,6 @@ export class Computer implements IComputer {
     while (this.strip[this.i] != EXIT_CODE) {
       const instruction = new Instruction(this.strip, this.i);
       this.executeInstruction(instruction);
-      this.i += instruction.parameters.length + 1;
     }
 
     return this.outputs;
@@ -50,6 +50,18 @@ export class Computer implements IComputer {
       case Operation.Output:
         this.executeOutput(instruction);
         return;
+      case Operation.JumpIfTrue:
+        this.executeJumpIfTrue(instruction);
+        return;
+      case Operation.JumpIfFalse:
+        this.executeJumpIfFalse(instruction);
+        return;
+      case Operation.LessThan:
+        this.executeLessThan(instruction);
+        return;
+      case Operation.Equals:
+        this.executeEquals(instruction);
+        return;
       default:
         throw `Unrecognized operation: ${instruction.operation}`
     }
@@ -69,6 +81,7 @@ export class Computer implements IComputer {
 
     const result = addend1 + addend2;
     this.strip[writePosition] = result;
+    this.moveToNextInstruction(instruction);
   }
 
   private executeMultiply(instruction: Instruction) {
@@ -85,6 +98,7 @@ export class Computer implements IComputer {
 
     const result = factor1 * factor2;
     this.strip[writePosition] = result;
+    this.moveToNextInstruction(instruction);
   }
 
   private executeInput(instruction: Instruction) {
@@ -101,6 +115,7 @@ export class Computer implements IComputer {
     const input = this.inputs.shift() as number;
     const writePosition = instruction.parameters[0].value;
     this.strip[writePosition] = input;
+    this.moveToNextInstruction(instruction);
   }
 
   private executeOutput(instruction: Instruction) {
@@ -109,6 +124,69 @@ export class Computer implements IComputer {
     }
     const value = this.getParameterValue(instruction.parameters[0]);
     this.outputs.push(value);
+    this.moveToNextInstruction(instruction);
+  }
+
+  private executeJumpIfTrue(instruction: Instruction) {
+    if (instruction.parameters.length != 2) {
+      throw `Unexpected number of parameters for jump if true, expected 2, got ${instruction.parameters.length}`
+    }
+
+    const value = this.getParameterValue(instruction.parameters[0]);
+    if (value != 0) {
+      this.i = this.getParameterValue(instruction.parameters[1]);
+    } else {
+      this.moveToNextInstruction(instruction);
+    }
+  }
+
+  private executeJumpIfFalse(instruction: Instruction) {
+    if (instruction.parameters.length != 2) {
+      throw `Unexpected number of parameters for jump if false, expected 2, got ${instruction.parameters.length}`
+    }
+    
+    const value = this.getParameterValue(instruction.parameters[0]);
+    if (value == 0) {
+      this.i = this.getParameterValue(instruction.parameters[1]);
+    } else {
+      this.moveToNextInstruction(instruction);
+    }
+  }
+
+  private executeLessThan(instruction: Instruction) {
+    if (instruction.parameters.length != 3) {
+      throw `Unexpected number of parameters for less than, expected 3, got ${instruction.parameters.length}`
+    }
+
+    const compare1 = this.getParameterValue(instruction.parameters[0])
+    const compare2 = this.getParameterValue(instruction.parameters[1]);
+
+    if (instruction.parameters[2].parameterMode == ParameterMode.Immediate)
+      throw "Error: Write parameter in immediate mode"
+
+    const writePosition = instruction.parameters[2].value;
+
+    const result = compare1 < compare2 ? 1: 0;
+    this.strip[writePosition] = result;
+    this.moveToNextInstruction(instruction);
+  }
+
+  private executeEquals(instruction: Instruction) {
+    if (instruction.parameters.length != 3) {
+      throw `Unexpected number of parameters for equals, expected 3, got ${instruction.parameters.length}`
+    }
+    
+    const compare1 = this.getParameterValue(instruction.parameters[0])
+    const compare2 = this.getParameterValue(instruction.parameters[1]);
+
+    if (instruction.parameters[2].parameterMode == ParameterMode.Immediate)
+      throw "Error: Write parameter in immediate mode"
+
+    const writePosition = instruction.parameters[2].value;
+
+    const result = compare1 == compare2 ? 1: 0;
+    this.strip[writePosition] = result;
+    this.moveToNextInstruction(instruction);
   }
 
   private getParameterValue(parameter: Parameter): number {
@@ -122,4 +200,7 @@ export class Computer implements IComputer {
     }
   }
 
+  private moveToNextInstruction(instruction: Instruction): void {
+    this.i += instruction.parameters.length + 1;
+  }
 }

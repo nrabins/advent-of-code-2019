@@ -1,38 +1,57 @@
 import { Instruction, Operation, Parameter, ParameterMode } from "./Instruction";
 
-export interface IComputer {
-  strip: number[]
+export enum RunResultType {
+  Output = "Output",
+  Halt = "Halt"
 }
 
-const EXIT_CODE = 99;
+export interface IResult {
+  type: RunResultType;
+  value?: number;
+}
+
+export class Result {
+  constructor(public type: RunResultType, public value?: number) {
+  }
+}
+
+export interface IComputer {
+  addInput(input: number): void;
+  getNextResult(): Result;
+  getLastResult(): Result | null;
+}
 
 export class Computer implements IComputer {
 
-  private i: number; // ha
-  private inputs: number[]
-  private outputs: number[];
+  private strip: number[];
 
-  constructor(public strip: number[]) {
+  private i: number = 0;
+  private inputs: number[] = []
+  private result: Result | null = null;
+
+  constructor(program: string) {
     this.i = 0;
     this.inputs = [];
-    this.outputs = [];
+    this.strip = program.split(",").map(num => parseInt(num, 10));
   }
 
-  public run(inputs: number[]): number[] {
-    this.resetMeta();
-    this.inputs = inputs;
+  public addInput(input: number): void {
+    this.inputs.push(input);
+  }
 
-    while (this.strip[this.i] != EXIT_CODE) {
+  public getNextResult(): Result {
+    this.result = null;
+
+    while (this.result == null) {
       const instruction = new Instruction(this.strip, this.i);
       this.executeInstruction(instruction);
     }
 
-    return this.outputs;
+    return this.result;
   }
 
-  private resetMeta(): void {
-    this.i = 0;
-    this.outputs = [];
+  public getLastResult(): Result | null {
+    return this.result;
   }
 
   private executeInstruction(instruction: Instruction): void {
@@ -61,9 +80,16 @@ export class Computer implements IComputer {
       case Operation.Equals:
         this.executeEquals(instruction);
         return;
+      case Operation.Halt:
+        this.executeHalt()
+        return;
       default:
         throw `Unrecognized operation: ${instruction.operation}`
     }
+  }
+
+  private executeHalt() {
+    this.result = new Result(RunResultType.Halt);
   }
 
   private executeAdd(instruction: Instruction) {
@@ -122,7 +148,7 @@ export class Computer implements IComputer {
       throw `Unexpected number of parameters for output, expected 1, got ${instruction.parameters.length}`
     }
     const value = this.getParameterValue(instruction.parameters[0]);
-    this.outputs.push(value);
+    this.result = new Result(RunResultType.Output, value);
     this.moveToNextInstruction(instruction);
   }
 
@@ -143,7 +169,7 @@ export class Computer implements IComputer {
     if (instruction.parameters.length != 2) {
       throw `Unexpected number of parameters for jump if false, expected 2, got ${instruction.parameters.length}`
     }
-    
+
     const value = this.getParameterValue(instruction.parameters[0]);
     if (value == 0) {
       this.i = this.getParameterValue(instruction.parameters[1]);
@@ -165,7 +191,7 @@ export class Computer implements IComputer {
 
     const writePosition = instruction.parameters[2].value;
 
-    const result = compare1 < compare2 ? 1: 0;
+    const result = compare1 < compare2 ? 1 : 0;
     this.strip[writePosition] = result;
     this.moveToNextInstruction(instruction);
   }
@@ -174,7 +200,7 @@ export class Computer implements IComputer {
     if (instruction.parameters.length != 3) {
       throw `Unexpected number of parameters for equals, expected 3, got ${instruction.parameters.length}`
     }
-    
+
     const compare1 = this.getParameterValue(instruction.parameters[0])
     const compare2 = this.getParameterValue(instruction.parameters[1]);
 
@@ -183,7 +209,7 @@ export class Computer implements IComputer {
 
     const writePosition = instruction.parameters[2].value;
 
-    const result = compare1 == compare2 ? 1: 0;
+    const result = compare1 == compare2 ? 1 : 0;
     this.strip[writePosition] = result;
     this.moveToNextInstruction(instruction);
   }

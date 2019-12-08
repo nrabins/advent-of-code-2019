@@ -1,37 +1,43 @@
 import * as fs from 'fs';
 import { Computer } from './Computer';
+import { permutator } from '../../../util/util';
 
-const text = fs.readFileSync('src/7/input.txt').toString('utf-8');
+const program = fs.readFileSync('src/7/input.txt').toString('utf-8');
 
-const AMPLIFIER_COUNT = 5;
+const AMPLIFIERS = [0, 1, 2, 3, 4]
 
-const originalStrip = text.split(',').map((i: string) => parseInt(i, 10));
+const maxThrustSignal = getMaxThrustSignal(program);
+console.log({maxThrustSignal})
 
-export const getMaxThrustSignal = (program: string): number => {
-  const orders = permutator([1, 2, 3, 4, 5]);
-  return 54321;
+export function getMaxThrustSignal(program: string): number {
+  const orders = permutator(AMPLIFIERS);
+
+  let max = Number.MIN_SAFE_INTEGER;
+  orders.forEach(order => {
+    const signal = getThrustSignal(program, order);
+    if (signal > max) {
+      max = signal;
+      console.log(`Found a new max [${max}] using phase order [${order.join(',')}]`);
+    }
+  })
+  return max;
 }
 
-// taken from https://stackoverflow.com/questions/9960908/permutations-in-javascript/20871714#20871714
-export const permutator = (inputArr) => {
-  let result = [];
+export function getThrustSignal(program: string, phaseSequence: number[]): number {
+  let signal = 0;
+  
+  phaseSequence.forEach(phase => {
+    const computer = new Computer(program);
+    const outputs = computer.run([phase, signal]);
+    if (outputs.length != 1) {
+      throw `Got an unexpected number of outputs. Expected 1, got ${outputs.length}`
+    }
+    signal = outputs[0];
+  });
 
-  const permute = (arr, m = []) => {
-    if (arr.length === 0) {
-      result.push(m)
-    } else {
-      for (let i = 0; i < arr.length; i++) {
-        let curr = arr.slice();
-        let next = curr.splice(i, 1);
-        permute(curr.slice(), m.concat(next))
-     }
-   }
- }
-
- permute(inputArr)
-
- return result;
+  return signal;
 }
+
 /*
 const computer = new Computer(originalStrip);
 const outputs = computer.run([1]);

@@ -1,4 +1,5 @@
-import { getMaxThrustSignal, permutator } from './part1';
+import { getMaxThrustSignal, getThrustSignal } from './part1';
+
 
 /* Example Tests */
 
@@ -10,9 +11,7 @@ import { getMaxThrustSignal, permutator } from './part1';
   expect(getMaxThrustSignal(testCase.program)).toBe(testCase.expected);
 }));
 
-
-/* Permutator tests */
-
-test("Permutator returns array of expected length", () => {
-  expect(permutator(['c','a','t'].length)).toBe(6);
+test("Example 1 detail", () => {
+  expect(getThrustSignal('3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0', [4, 3, 2, 1, 0]))
+    .toBe(43210);
 })
