@@ -9,7 +9,7 @@ export class AsteroidField {
     const str = fs.readFileSync(filePath).toString('utf-8');
     return AsteroidField.fromString(str);
   }
-  
+
   public static fromString(str: string): AsteroidField {
     const asteroids: Point[] = [];
 
@@ -24,20 +24,33 @@ export class AsteroidField {
     return new AsteroidField(asteroids, rows[0].length, rows.length);
   }
 
+  public getBestLocation() {
+    let bestLocation;
+    let bestLocationVisibleAsteroidCount = Number.MIN_SAFE_INTEGER;
+
+    this.asteroids.forEach(asteroid => {
+      const visibleAsteroidCount = this.countVisibleAsteroids(asteroid);
+      if (visibleAsteroidCount > bestLocationVisibleAsteroidCount) {
+        bestLocation = asteroid;
+        bestLocationVisibleAsteroidCount = visibleAsteroidCount;
+      }
+    });
+
+    return {
+      asteroid: bestLocation,
+      visibleAsteroidCount: bestLocationVisibleAsteroidCount
+    }
+  }
+
   private countVisibleAsteroids(point: Point): number {
-    /* Approach: 
-      - Make an 2D array of points representing visible locations
-      - Iterate through asteroids from near to far from point
-        - First, check the row the asteroid is on starting from the asteroid's x coordinate and working out in both directions
-        - Then, check the rows above and below the asteroid's y coordinate, working out.
-          (The asteroids within these rows don't have to be checked in any particular order, as they can't occlude one another.)
-        - Mark off asteroid as a visible one if it's in the visible location array
-        - Mark off all the 'shadows' of the asteroid as non-visible
-    */
-   
-    const visiblePoints: boolean[][] = [];
+    const visibleAsteroids: Point[] = [];
 
-
+    this.asteroids.forEach(asteroid => {
+      if (!this.anyAsteroidsBetween(point, asteroid)) {
+        visibleAsteroids.push(asteroid);
+      }
+    });
+    return visibleAsteroids.length;
   }
 
   /**
@@ -45,8 +58,8 @@ export class AsteroidField {
    * @param a Point
    * @param b Point
    */
-  private anyBetween(a: Point, b: Point): boolean {
-    // TODO 
-    //for ()
+  private anyAsteroidsBetween(a: Point, b: Point): boolean {
+    return this.asteroids.some(test => Point.isBetween(test, a, b));
   }
+
 }
