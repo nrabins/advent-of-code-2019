@@ -8,7 +8,7 @@ test("Quine", () => {
   const outputs = results.slice(0, -1);
   expect(outputs.length).toBe(16);
   expect(outputs.every(result => result.type == RunResultType.Output)).toBeTruthy();
-  expect(outputs.map(output => output.toString).join(",")).toBe(program); // quine-iness
+  expect(outputs.map(output => output.value.toString()).join(",")).toBe(program); // quine-iness
 
   const haltResult = results[results.length - 1];
   expect(haltResult.type).toBe(RunResultType.Halt);

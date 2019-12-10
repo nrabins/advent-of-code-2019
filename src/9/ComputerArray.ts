@@ -1,4 +1,4 @@
-import { permutator } from "../../../util/util";
+import { permutator } from "../../util/util";
 import { Computer, Result, RunResultType } from "./Computer";
 
 const AMPLIFIERS = [5, 6, 7, 8, 9]

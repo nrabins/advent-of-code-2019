@@ -27,7 +27,7 @@ export class Computer implements IComputer {
   private strip: number[];
   private instructionPointer: number = 0;
   private relativeBase: number = 0;
-  
+
   private inputs: number[] = []
   private result: Result | null = null;
 
@@ -115,14 +115,9 @@ export class Computer implements IComputer {
     }
     const addend1 = this.getParameterValue(instruction.parameters[0])
     const addend2 = this.getParameterValue(instruction.parameters[1]);
-
-    if (instruction.parameters[2].parameterMode == ParameterMode.Immediate)
-      throw new Error("Error: Write parameter in immediate mode");
-
-    const writePosition = instruction.parameters[2].value;
-
     const result = addend1 + addend2;
-    this.strip[writePosition] = result;
+
+    this.writeToStrip(instruction.parameters[2], result);
     this.moveToNextInstruction(instruction);
   }
 
@@ -132,14 +127,9 @@ export class Computer implements IComputer {
     }
     const factor1 = this.getParameterValue(instruction.parameters[0])
     const factor2 = this.getParameterValue(instruction.parameters[1]);
-
-    if (instruction.parameters[2].parameterMode == ParameterMode.Immediate)
-      throw new Error("Error: Write parameter in immediate mode");
-
-    const writePosition = instruction.parameters[2].value;
-
     const result = factor1 * factor2;
-    this.strip[writePosition] = result;
+
+    this.writeToStrip(instruction.parameters[2], result);
     this.moveToNextInstruction(instruction);
   }
 
@@ -150,13 +140,9 @@ export class Computer implements IComputer {
     if (instruction.parameters.length != 1) {
       throw new Error(`Unexpected number of parameters for input, expected 1, got ${instruction.parameters.length}`);
     }
-    if (instruction.parameters[0].parameterMode == ParameterMode.Immediate) {
-      throw new Error("Error: Write parameter in immediate mode");
-    }
-
+    
     const input = this.inputs.shift() as number;
-    const writePosition = instruction.parameters[0].value;
-    this.strip[writePosition] = input;
+    this.writeToStrip(instruction.parameters[0], input);
     this.moveToNextInstruction(instruction);
   }
 
@@ -202,14 +188,9 @@ export class Computer implements IComputer {
 
     const compare1 = this.getParameterValue(instruction.parameters[0])
     const compare2 = this.getParameterValue(instruction.parameters[1]);
-
-    if (instruction.parameters[2].parameterMode == ParameterMode.Immediate)
-      throw new Error("Write parameter in immediate mode");
-
-    const writePosition = instruction.parameters[2].value;
-
     const result = compare1 < compare2 ? 1 : 0;
-    this.strip[writePosition] = result;
+
+    this.writeToStrip(instruction.parameters[2], result);
     this.moveToNextInstruction(instruction);
   }
 
@@ -220,14 +201,9 @@ export class Computer implements IComputer {
 
     const compare1 = this.getParameterValue(instruction.parameters[0])
     const compare2 = this.getParameterValue(instruction.parameters[1]);
-
-    if (instruction.parameters[2].parameterMode == ParameterMode.Immediate)
-      throw new Error("Error: Write parameter in immediate mode");
-
-    const writePosition = instruction.parameters[2].value;
-
     const result = compare1 == compare2 ? 1 : 0;
-    this.strip[writePosition] = result;
+
+    this.writeToStrip(instruction.parameters[2], result);
     this.moveToNextInstruction(instruction);
   }
 
@@ -242,17 +218,75 @@ export class Computer implements IComputer {
   }
 
   private getParameterValue(parameter: Parameter): number {
-    switch (parameter.parameterMode) {
-      case ParameterMode.Immediate:
-        return parameter.value;
-      case ParameterMode.Position:
-        return this.strip[parameter.value];
-      default:
-        throw new Error(`Unrecognized parameter mode: ${parameter.parameterMode}`);
+    if (parameter.parameterMode == ParameterMode.Immediate) {
+      return parameter.value;
     }
+
+    if (parameter.parameterMode == ParameterMode.Position || parameter.parameterMode == ParameterMode.Relative) {
+      const position = parameter.parameterMode == ParameterMode.Position
+        ? parameter.value
+        : parameter.value + this.relativeBase;
+
+      if (position < 0) {
+        throw new Error("Attempted to read from a position less than zero");
+      }
+
+      if (position >= this.strip.length) {
+        this.expandStrip(position);
+      }
+
+      return this.strip[position];
+    }
+
+    throw new Error(`Unrecognized parameter mode: ${parameter.parameterMode}`);
+  }
+
+  private writeToStrip(parameter: Parameter, value: number): void {
+    if (parameter.parameterMode == ParameterMode.Immediate) {
+      throw new Error("Attempted to write data in immediate mode. This is not allowed.");
+    }
+
+    if (parameter.parameterMode == ParameterMode.Position || parameter.parameterMode == ParameterMode.Relative) {
+      const position = parameter.parameterMode == ParameterMode.Position
+        ? parameter.value
+        : parameter.value + this.relativeBase;
+
+      if (position < 0) {
+        throw new Error("Attempted to write to a position less than zero");
+      }
+
+      if (position >= this.strip.length) {
+        this.expandStrip(position);
+      }
+
+      this.strip[position] = value;
+      return;
+    }
+
+    throw new Error(`Unrecognized parameter mode: ${parameter.parameterMode}`);
+
+  }
+
+  private expandStrip(size: number): void {
+    const amountToAdd = size - this.strip.length + 1;
+    const newZeroes: number[] = new Array(amountToAdd).fill(0);
+    this.strip = this.strip.concat(newZeroes);
   }
 
   private moveToNextInstruction(instruction: Instruction): void {
     this.instructionPointer += instruction.parameters.length + 1;
+  }
+
+  private stripStr() {
+    return this.strip.map((num, index) => {
+      const isInstruction = this.instructionPointer == index;
+      let str = "";
+      if (isInstruction)
+        str += "["
+      str += num;
+      if (isInstruction)
+        str += "]";
+      return str
+    }).join(",");
   }
 }
