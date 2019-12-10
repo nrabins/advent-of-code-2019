@@ -17,11 +17,7 @@ export class Point implements IPoint {
   }
   
   public static isBetween(test: Point, a: Point, b: Point): boolean {
-    if (test.equals(a) || test.equals(b)) {
-      // We don't consider a point inbetween two points if it IS one of the points
-      return false; 
-    }
-    
-    return Point.distance(a, test) + Point.distance(test, b) == Point.distance(a, b);
+    const difference = Math.abs(Point.distance(a, test) + Point.distance(test, b) - Point.distance(a, b));
+    return difference < .000000000001;
   }
 }
