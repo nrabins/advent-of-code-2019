@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { Computer } from './Computer';
-import { permutator } from '../../../util/util';
+import { permutator } from '../../util/util';
 
 const program = fs.readFileSync('src/7/input.txt').toString('utf-8');
 
