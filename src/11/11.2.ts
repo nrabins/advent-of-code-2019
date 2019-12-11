@@ -6,7 +6,7 @@ import { Direction } from './Direction';
 
 const fileProgram = fs.readFileSync('src/11/input.txt').toString('utf-8');
 
-const painter = new Painter();
+const painter = new Painter(Color.White);
 const computer = new Computer(fileProgram);
 
 while (true) {
@@ -32,6 +32,4 @@ while (true) {
   painter.turnAndMove(turnDirection);
 }
 
-const totalPainted = painter.getTotalPainted();
-
-console.log({ totalPainted });
+painter.printOutput();
