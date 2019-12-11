@@ -4,10 +4,8 @@ import { Dimensions } from '../../util/Dimensions';
 import * as fs from 'fs';
 
 export class AsteroidField {
-  private dimensions: Dimensions;
 
   private constructor(private asteroids: Point[]) {
-    this.dimensions = Dimensions.fromPoints(asteroids);
   }
 
   public static fromFile(filePath: string): AsteroidField {
@@ -30,56 +28,51 @@ export class AsteroidField {
   }
 
   public getVaporizationOrder(origin: Point): Point[] {
-    const sortedPoints = Point.getPointsSortedByDistance(origin, this.asteroids)
-      .filter(point => !point.equals(origin));
+    const otherAsteroids = this.asteroids.filter(asteroid => !asteroid.equals(origin));
+    const sortedPoints = Point.getPointsSortedByDistance(origin, otherAsteroids);
 
     const visited: Point[] = [];
-    const rays: { angleInDegrees: number, points: Point[] } = {};
+    const raysByAngle: { [key: number]: Point[] } = {};
 
     sortedPoints.forEach(point => {
       if (visited.includes(point)) {
         return;
       }
 
-      const asteroidsOnRay = Point.getAllOnRay(origin, point, this.asteroids);
+      const asteroidsOnRay = Point.getAllOnRay(origin, point, otherAsteroids);
+      asteroidsOnRay.sort((a, b) => Point.distance(a, origin) - Point.distance(b, origin));
+
+      visited.push(...asteroidsOnRay);
       const angle = Point.getAngleInDegrees(origin, point);
-    })
+      const mappedAngle = ((360 - angle) + 90) % 360;
+
+      raysByAngle[mappedAngle] = asteroidsOnRay;
+    });
+
+    const rayLists = Object.keys(raysByAngle).map(parseFloat).sort((a, b) => a - b).map(angle => {
+      return raysByAngle[angle];
+    });
+
+    const vaporized: Point[] = []
+
+    let rayIndex = 0;
+    for (let i = 0; i < otherAsteroids.length; i++) {
+      const ray = rayLists[rayIndex];
+      const nextVaporized = ray.shift() as Point;
+       vaporized.push(nextVaporized);
+      if (ray.length == 0) {
+        rayLists.splice(rayIndex, 1);
+        if (rayIndex >= rayLists.length) {
+          rayIndex = rayLists.length - 1;
+        }
+      } else {
+        rayIndex++;
+        rayIndex %= rayLists.length;
+      }
+
+    }
 
 
-    // const rays = this.getRays(origin);
-    return rays;
+    return vaporized;
   }
-
-
-  // public getRays(origin: Point): Point[][] {
-  //   let maxDistanceToWall = Number.MIN_SAFE_INTEGER;
-  //   maxDistanceToWall = Math.max(maxDistanceToWall, origin.x - this.dimensions.left);
-  //   maxDistanceToWall = Math.max(maxDistanceToWall, this.dimensions.right - origin.x);
-  //   maxDistanceToWall = Math.max(maxDistanceToWall, origin.y - this.dimensions.top);
-  //   maxDistanceToWall = Math.max(maxDistanceToWall, this.dimensions.bottom - origin.y);
-
-  //   for (let ringDistance = 1; ringDistance <= maxDistanceToWall; ringDistance++) {
-  //     const ring = this.getRing(origin, ringDistance);
-  //   }
-
-  // }
-
-  // public getRing(origin: Point, distance: number): Point[] {
-
-  //   const ring: Point[] = [];
-  //   // top
-  //   if (origin.y - distance >= this.dimensions.top) {
-  //     const left = Math.max(this.dimensions.left, origin.x-distance);
-  //     const right = Math.min
-  //   }
-
-  //   // bottom
-
-  //   // left
-
-  //   // right
-
-
-  //   return ring;
-  // }
 }
