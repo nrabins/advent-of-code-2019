@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { Computer, Result, RunResultType } from './Computer';
+import { Computer, RunResultType } from './Computer';
 import Painter from './Painter';
 import { Color } from './Color';
 import { Direction } from './Direction';
