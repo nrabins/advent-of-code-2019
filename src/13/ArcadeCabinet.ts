@@ -1,5 +1,6 @@
 import { TileType, tileTypeFromId } from './TileType';
 import { Computer, IComputer, RunResultType } from './Computer';
+import { Dimensions } from '../util/Dimensions';
 
 export interface IArcadeCabinet {
   getTileCount(tileType: TileType): number;
@@ -9,24 +10,37 @@ export interface IArcadeCabinet {
 export default class ArcadeCabinet implements IArcadeCabinet {
   private computer: IComputer;
   private tiles: { [y: number]: { [x: number]: TileType } } = {};
+  private score: number = 0;
 
-  constructor(program: string) {
+  constructor(program: string, private inputOverride: number | null = null) {
     this.computer = new Computer(program);
-    this.initialize();
+    if (inputOverride != null) {
+      this.computer.setInputOverride(inputOverride);
+    }
+    while(true) {
+      this.run();
+    }
   }
 
-  private initialize(): void {
-
+  private run(): void {
+    let instructionCount = 0;
     while (true) {
+      instructionCount++;
       const results = this.computer.getNextResults(3);
       if (results.length != 3 || results[0].type == RunResultType.Halt) {
         break;
       }
       const x = results[0].value;
       const y = results[1].value;
-      const type = tileTypeFromId(results[2].value);
-
-      this.addTile(x, y, type);
+      const value = results[2].value;
+      
+      if (x == -1 && y == 0) {
+        this.score = value;
+        console.log(this.score);
+      } else {
+        const tile = tileTypeFromId(value);
+        this.addTile(x, y, tile);
+      }
     }
   }
 
@@ -50,27 +64,61 @@ export default class ArcadeCabinet implements IArcadeCabinet {
     return count;
   }
 
-  // public printOutput(): void {
-  //   const lines = this.getOutputAsLines();
-  //   lines.forEach(line => console.log(line));
-  // }
+  public printOutput(): void {
+    const lines = this.getOutputAsLines();
+    lines.forEach(line => console.log(line));
+  }
 
-  // private getOutputAsLines(): string[] {
+  private getOutputAsLines(): string[] {
+    const dimensions = this.getDimensions();
+    const lines: string[] = [];
 
-  //   const lines = Object.keys(this.tiles).map(y => parseInt(y, 10)).sort((a, b) => b - a).map(y => {
-  //     // TODO: sort and save to line
-  //     let line = "";
-  //     for (let x = 0; x <= max; x++) {
-  //       line += rows[y].includes(x) ? "█" : " ";
-  //     };
-  //     return line;
-  //   })
+    for (let y = dimensions.top; y <= dimensions.bottom; y++) {
+      let line = "";
+      if (this.tiles[y]) {
+        const chars: string[] = [];
+        for (let x = dimensions.left; x <= dimensions.right; x++) {
+          let char = " ";
+          if (this.tiles[y][x]) {
+            char = this.getTileChar(this.tiles[y][x]);
+          }
+          chars.push(char);
+        }
+        line = chars.join("");
+      } else {
+        line = "\r\n";
+      }
+      lines.push(line);
+    }
 
-  //   return lines;
-  // }
+    return lines;
+  }
 
-  // private getTileChar(tileType: TileType): string {
+  private getDimensions(): Dimensions {
+    const ys = Object.keys(this.tiles).map(y => parseInt(y, 10));
+    const top = Math.min(...ys);
+    const bottom = Math.max(...ys);
 
-  // }
+    const xs: number[] = Object.keys(this.tiles).map(yStr => parseInt(yStr, 10)).reduce((xarr, y) => {
+      const rowXs = Object.keys(this.tiles[y]).map(xStr => parseInt(xStr, 10));
+      return xarr.concat(rowXs);
+    }, [] as number[]);
+
+    const left = Math.min(...xs);
+    const right = Math.max(...xs);
+    return new Dimensions(left, right, top, bottom);
+  }
+
+  private getTileChar(tileType: TileType): string {
+    switch (tileType) {
+      case TileType.Ball: return "●";
+      case TileType.Block: return "░";
+      case TileType.Empty: return " ";
+      case TileType.HorizontalPaddle: return "=";
+      case TileType.Wall: return "█";
+      default:
+        throw new Error(`Unrecognized tile type: ${tileType}`);
+    }
+  }
 
 }

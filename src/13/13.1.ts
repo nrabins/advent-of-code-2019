@@ -9,3 +9,5 @@ const arcadeCabinet = new ArcadeCabinet(fileProgram);
 const blockCount = arcadeCabinet.getTileCount(TileType.Block);
 
 console.log({ blockCount });
+
+arcadeCabinet.printOutput();

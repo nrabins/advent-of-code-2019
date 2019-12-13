@@ -17,6 +17,7 @@ export class Result implements IResult {
 
 export interface IComputer {
   addInput(input: number): void;
+  setInputOverride(input: number): void;
   getNextResult(): Result;
   getNextResults(numberOfResults: number): Result[];
   getLastResult(): Result | null;
@@ -30,6 +31,7 @@ export class Computer implements IComputer {
   private relativeBase: number = 0;
 
   private inputs: number[] = []
+  private inputOverride: number | null = null;
   private result: Result | null = null;
 
   constructor(program: string) {
@@ -40,6 +42,10 @@ export class Computer implements IComputer {
 
   public addInput(input: number): void {
     this.inputs.push(input);
+  }
+
+  public setInputOverride(input: number): void {
+    this.inputOverride = input;
   }
 
   public getNextResult(): Result {
@@ -147,14 +153,19 @@ export class Computer implements IComputer {
   }
 
   private executeInput(instruction: Instruction) {
-    if (this.inputs.length == 0) {
+    if (this.inputOverride == null && this.inputs.length == 0) {
       throw new Error("Ran out of inputs");
     }
     if (instruction.parameters.length != 1) {
       throw new Error(`Unexpected number of parameters for input, expected 1, got ${instruction.parameters.length}`);
     }
-    
-    const input = this.inputs.shift() as number;
+
+    let input: number;
+    if (this.inputOverride != null) {
+      input = this.inputOverride;
+    } else {
+      input = this.inputs.shift() as number;
+    }
     this.writeToStrip(instruction.parameters[0], input);
     this.moveToNextInstruction(instruction);
   }
