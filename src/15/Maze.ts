@@ -61,7 +61,14 @@ export default class Maze {
   private static rowNum: number[] = [-1, 0, 0, 1];
   private static colNum: number[] = [0, -1, 1, 0];
 
-  public getDistanceBetween(start: Point, end: Point) {
+  public getDistanceBetween(start: Point, end: Point): number | undefined {
+
+    if (this.grid[start.y][start.x].tile == Tile.Wall ||
+      this.grid[end.y][end.x].tile == Tile.Wall) {
+      return undefined;
+    }
+
+
     const visited = Maze.initialize2dArray(this.grid, false);
     visited[start.y][start.x] = true;
 
@@ -86,8 +93,8 @@ export default class Maze {
         if (this.isValid(row, col) &&
           this.grid[row][col].tile == Tile.Open &&
           !visited[row][col]) {
-            visited[row][col] = true;
-            q.push(new QueueNode(new Point(col, row), curr.distance + 1))
+          visited[row][col] = true;
+          q.push(new QueueNode(new Point(col, row), curr.distance + 1))
         }
       }
     }
@@ -113,6 +120,26 @@ export default class Maze {
       arr.push(row);
     })
     return arr;
+  }
+
+  // I know there are efficient ways to do this, but I have a hammer and this looks quite like a nail
+  public getFarthestDistance(point: Point): number {
+    let maxDistance = Number.MIN_SAFE_INTEGER;
+
+    const height = this.grid.length;
+    const width = this.grid[0].length;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const distance = this.getDistanceBetween(point, new Point(x, y));
+        if (distance && distance > maxDistance) {
+          console.log(`found new max distance: ${distance}`);
+          maxDistance = distance;
+        }
+      }
+    }
+
+    return maxDistance;
   }
 
 }
