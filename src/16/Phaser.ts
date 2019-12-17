@@ -1,28 +1,39 @@
 export default class Phaser {
   private startingSignal: number[];
 
-  constructor(private input: string) {
-    this.startingSignal = input.split("").map(numStr => parseInt(numStr, 10));
+  private patterns: number[][] = [];
+
+  constructor(input: string, start: number = 0, count: number = input.length) {
+    // double to handle the case where we wrap around a repeat line
+    const doubledInput = input.repeat(2);
+    const startInInput = start % input.length;
+
+    this.startingSignal = doubledInput.split("")
+      .slice(startInInput, startInInput + count)
+      .map(numStr => parseInt(numStr, 10));
+
+    for (let repeatCount = 1; repeatCount <= count; repeatCount++) {
+      this.patterns.push(Phaser.patternForRange(start, start + count - 1, repeatCount));
+    }
   }
 
-  public getSignals(phaseCount: number, offset: number = 0): number[][] {
+  public getSignals(phaseCount: number): number[][] {
     const signals: number[][] = [];
     signals.push(this.startingSignal);
 
     for (let phase = 1; phase <= phaseCount; phase++) {
       const lastSignal = signals[phase - 1];
-      const nextSignal = Phaser.getNextPhase(lastSignal);
+      const nextSignal = this.getNextPhase(lastSignal);
       signals.push(nextSignal);
     }
 
     return signals;
   }
 
-  private static getNextPhase(lastSignal: number[]): number[] {
+  private getNextPhase(lastSignal: number[]): number[] {
     const nextSignal: number[] = [];
     for (let digitIndex = 0; digitIndex < lastSignal.length; digitIndex++) {
-      const pattern = Phaser.getPattern(digitIndex, lastSignal.length);
-
+      const pattern = this.patterns[digitIndex];
       if (pattern.length != lastSignal.length) {
         throw new Error(`Pattern length ${pattern.length} doesn't match last signal length ${lastSignal.length}`);
       }
