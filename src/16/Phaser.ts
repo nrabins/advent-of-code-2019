@@ -3,21 +3,16 @@ export default class Phaser {
 
   private patterns: number[][] = [];
 
-  constructor(input: string, start: number = 0, count: number = input.length) {
-    // double to handle the case where we wrap around a repeat line
-    const doubledInput = input.repeat(2);
-    const startInInput = start % input.length;
-
-    this.startingSignal = doubledInput.split("")
-      .slice(startInInput, startInInput + count)
-      .map(numStr => parseInt(numStr, 10));
-
-    for (let repeatCount = 1; repeatCount <= count; repeatCount++) {
-      this.patterns.push(Phaser.patternForRange(start, start + count - 1, repeatCount));
-    }
+  constructor(input: string) {
+    this.startingSignal = input.split("").map(numStr => parseInt(numStr, 10));
   }
 
   public getSignals(phaseCount: number): number[][] {
+
+    for (let repeatCount = 1; repeatCount <= this.startingSignal.length; repeatCount++) {
+      this.patterns.push(Phaser.patternForRange(0, this.startingSignal.length-1, repeatCount));
+    }
+
     const signals: number[][] = [];
     signals.push(this.startingSignal);
 
@@ -47,28 +42,32 @@ export default class Phaser {
     return nextSignal;
   }
 
-  private static getPattern(charIndex: number, length: number): number[] {
-    const repeatCount = charIndex + 1;
-    const subPattern = [];
-    for (let r = 0; r < repeatCount; r++) {
-      subPattern.push(0);
-    }
-    for (let r = 0; r < repeatCount; r++) {
-      subPattern.push(1);
-    }
-    for (let r = 0; r < repeatCount; r++) {
-      subPattern.push(0);
-    }
-    for (let r = 0; r < repeatCount; r++) {
-      subPattern.push(-1);
+  public getOffsetSignalsViaHeuristic(offset: number, phaseCount: number): number[][] {
+    const signals: number[][] = [];
+    signals.push(this.startingSignal.slice(offset));
+
+    for (let phase = 1; phase <= phaseCount; phase++) {
+      console.log(`phase ${phase}`)
+      const lastSignal = signals[phase - 1];
+      const nextSignal = this.getNextPhaseViaHeuristic(lastSignal);
+      signals.push(nextSignal);
     }
 
-    let pattern = [];
-    while (pattern.length < length + 1) {
-      pattern.push(...subPattern);
+    return signals;
+  }
+
+  // if you know you're in the second half of the signal, you can get digit i by summing up the digits from i to the end of the signal
+  // We work from the right side and store the current sum
+  public getNextPhaseViaHeuristic(lastSignal: number[]): number[] {
+    const digits: number[] = [];
+    let sum = 0;
+    for (let i = lastSignal.length-1; i >= 0 ; i--) {
+      sum += lastSignal[i];
+      const digit = parseInt(sum.toString(10).slice(-1), 10);
+      digits.push(digit);
     }
-    pattern = pattern.slice(1, length + 1);
-    return pattern;
+    digits.reverse();
+    return digits;
   }
 
   /**
